@@ -160,3 +160,66 @@ def test_request_classifiers() -> None:
     assert is_refusal_response("I can only help with StoreStock store questions.") is True
     assert is_refusal_response("Sorry, I am unable to answer that request.") is True
     assert is_refusal_response("Hello! How can I help with your store today?") is False
+
+
+def test_grounding_allows_iso8601_timestamp_utc_and_ist_dates_times_and_list_counts() -> None:
+    trace = [
+        TraceRecord(
+            tool_name="get_customer_ledger",
+            args={"customer_id": 5},
+            result={
+                "items": [
+                    {
+                        "id": 10,
+                        "amount_paise": 50000,
+                        "amount_rupees": "500.00",
+                        "created_at": "2026-11-24T20:30:51.650893+00:00",
+                    },
+                    {
+                        "id": 11,
+                        "amount_paise": 30000,
+                        "amount_rupees": "300.00",
+                        "created_at": "2026-11-24T20:30:51.650893+00:00",
+                    },
+                    {
+                        "id": 12,
+                        "amount_paise": 21500,
+                        "amount_rupees": "215.00",
+                        "created_at": "2026-11-24T20:30:51.650893+00:00",
+                    },
+                ]
+            },
+        )
+    ]
+
+    ok_utc, bad_utc = verify_number_grounding(
+        "Found 3 ledger entries from 24 Nov 2026 at 20:30 for Rs 500.00, Rs 300.00, and Rs 215.00.",
+        "Check Priya Nair's recent credit ledger entries.",
+        trace,
+    )
+    assert ok_utc is True
+    assert bad_utc == []
+
+    ok_ist, bad_ist = verify_number_grounding(
+        "Latest entry on Nov 25, 2026 (2026-11-25 at 02:00 IST) was Rs 500.00.",
+        "Check Priya Nair's recent credit ledger entries.",
+        trace,
+    )
+    assert ok_ist is True
+    assert bad_ist == []
+
+    ok_invented_amount, bad_amount = verify_number_grounding(
+        "Found 3 ledger entries on 24 Nov 2026 totaling Rs 999.00.",
+        "Check Priya Nair's recent credit ledger entries.",
+        trace,
+    )
+    assert ok_invented_amount is False
+    assert bad_amount == ["999.00"]
+
+    ok_invented_date, bad_date = verify_number_grounding(
+        "Entry on 2027-07-31 was Rs 500.00.",
+        "Check Priya Nair's recent credit ledger entries.",
+        trace,
+    )
+    assert ok_invented_date is False
+    assert bad_date == ["2027", "07", "31"]

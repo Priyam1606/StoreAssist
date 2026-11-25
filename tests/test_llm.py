@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from google.genai import types
+from google.genai import errors, types
 import httpx
 import pytest
 
@@ -168,10 +168,10 @@ def test_gemini_client_builds_manual_tool_config_and_parses_tool_call_and_text()
 
 def test_gemini_client_wraps_sdk_and_empty_response_errors_in_llm_error() -> None:
     tools = _sample_tools()
-    sdk_client = _StubSDKClient([RuntimeError("429 quota exceeded"), _StubResponse(text="   ")])
+    sdk_client = _StubSDKClient([RuntimeError("invalid sdk payload"), _StubResponse(text="   ")])
     gemini = GeminiClient(api_key="dummy-key", model="gemini-3.5-flash-lite", sdk_client=sdk_client)
 
-    with pytest.raises(LLMError, match="429 quota exceeded"):
+    with pytest.raises(LLMError, match="invalid sdk payload"):
         gemini.generate([Message(role="user", content="Hi")], "", tools)
 
     with pytest.raises(LLMError, match="empty response"):
@@ -219,3 +219,73 @@ def test_gemini_client_preserves_thought_signature_across_turns() -> None:
     assert model_content.role == "model"
     assert model_content.parts[0].function_call.name == "get_low_stock"
     assert model_content.parts[0].thought_signature == signature
+
+
+def test_gemini_client_retries_429_and_503_with_backoff_and_succeeds() -> None:
+    tools = _sample_tools()
+    rate_limit = errors.ClientError(
+        429,
+        {"error": {"message": "Quota exceeded", "status": "RESOURCE_EXHAUSTED"}},
+    )
+    unavailable = errors.ServerError(
+        503,
+        {"error": {"message": "Service unavailable", "status": "UNAVAILABLE"}},
+    )
+    sdk_client = _StubSDKClient([rate_limit, unavailable, _StubResponse(text="Recovered answer.")])
+    sleeps: list[float] = []
+    gemini = GeminiClient(
+        api_key="dummy-key",
+        model="gemini-3.5-flash-lite",
+        sdk_client=sdk_client,
+        sleep_fn=sleeps.append,
+    )
+
+    result = gemini.generate([Message(role="user", content="Hi")], "System", tools)
+
+    assert result == LLMResponse(text="Recovered answer.")
+    assert sleeps == [4.0, 8.0]
+    assert len(sdk_client.models.calls) == 3
+
+
+def test_gemini_client_fails_after_exhausting_transient_retries() -> None:
+    tools = _sample_tools()
+    unavailable = errors.ServerError(
+        503,
+        {"error": {"message": "Service unavailable", "status": "UNAVAILABLE"}},
+    )
+    sdk_client = _StubSDKClient([unavailable, unavailable, unavailable, unavailable])
+    sleeps: list[float] = []
+    gemini = GeminiClient(
+        api_key="dummy-key",
+        model="gemini-3.5-flash-lite",
+        sdk_client=sdk_client,
+        sleep_fn=sleeps.append,
+    )
+
+    with pytest.raises(LLMError, match="503"):
+        gemini.generate([Message(role="user", content="Hi")], "System", tools)
+
+    assert sleeps == [4.0, 8.0, 16.0]
+    assert len(sdk_client.models.calls) == 4
+
+
+def test_gemini_client_does_not_retry_400_client_error() -> None:
+    tools = _sample_tools()
+    bad_request = errors.ClientError(
+        400,
+        {"error": {"message": "Invalid argument", "status": "INVALID_ARGUMENT"}},
+    )
+    sdk_client = _StubSDKClient([bad_request])
+    sleeps: list[float] = []
+    gemini = GeminiClient(
+        api_key="dummy-key",
+        model="gemini-3.5-flash-lite",
+        sdk_client=sdk_client,
+        sleep_fn=sleeps.append,
+    )
+
+    with pytest.raises(LLMError, match="400"):
+        gemini.generate([Message(role="user", content="Hi")], "System", tools)
+
+    assert sleeps == []
+    assert len(sdk_client.models.calls) == 1

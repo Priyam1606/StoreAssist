@@ -2,12 +2,17 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Literal, Sequence
+import time
+from typing import Any, Callable, Literal, Sequence
 
 from google import genai
 from google.genai import types
 
 from storeassist.tools import Tool
+
+DEFAULT_RETRY_DELAYS: tuple[float, ...] = (4.0, 8.0, 16.0)
+_TRANSIENT_STATUS_CODES = {429, 503}
+_TRANSIENT_MARKERS = ("429", "503", "RESOURCE_EXHAUSTED", "UNAVAILABLE")
 
 
 class LLMError(Exception):
@@ -141,10 +146,55 @@ def _extract_gemini_response(response: Any) -> LLMResponse:
     raise LLMError("Gemini returned an empty response.")
 
 
+def _is_transient_gemini_error(exc: Exception) -> bool:
+    code = getattr(exc, "code", None)
+    if isinstance(code, int):
+        return code in _TRANSIENT_STATUS_CODES
+    status_code = getattr(exc, "status_code", None)
+    if isinstance(status_code, int):
+        return status_code in _TRANSIENT_STATUS_CODES
+    status = getattr(exc, "status", None)
+    if isinstance(status, str) and status.upper() in {"RESOURCE_EXHAUSTED", "UNAVAILABLE"}:
+        return True
+    upper_text = str(exc).upper()
+    return any(marker in upper_text for marker in _TRANSIENT_MARKERS)
+
+
 class GeminiClient(LLMClient):
-    def __init__(self, api_key: str, model: str, sdk_client: Any = None) -> None:
+    def __init__(
+        self,
+        api_key: str,
+        model: str,
+        sdk_client: Any = None,
+        sleep_fn: Callable[[float], None] = time.sleep,
+        retry_delays: Sequence[float] = DEFAULT_RETRY_DELAYS,
+    ) -> None:
         self._model = model
         self._client = sdk_client if sdk_client is not None else genai.Client(api_key=api_key)
+        self._sleep_fn = sleep_fn
+        self._retry_delays = tuple(retry_delays)
+
+    def _call_with_retries(
+        self,
+        contents: list[types.Content],
+        config: types.GenerateContentConfig,
+    ) -> Any:
+        attempts = len(self._retry_delays) + 1
+        for attempt in range(attempts):
+            try:
+                return self._client.models.generate_content(
+                    model=self._model,
+                    contents=contents,
+                    config=config,
+                )
+            except LLMError:
+                raise
+            except Exception as exc:
+                if attempt < len(self._retry_delays) and _is_transient_gemini_error(exc):
+                    self._sleep_fn(self._retry_delays[attempt])
+                    continue
+                raise LLMError(f"Gemini request failed: {exc}") from exc
+        raise LLMError("Gemini request failed after retries.")
 
     def generate(
         self,
@@ -164,17 +214,7 @@ class GeminiClient(LLMClient):
             tools=gemini_tools,
             automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
         )
-        try:
-            response = self._client.models.generate_content(
-                model=self._model,
-                contents=contents,
-                config=config,
-            )
-        except LLMError:
-            raise
-        except Exception as exc:
-            raise LLMError(f"Gemini request failed: {exc}") from exc
-
+        response = self._call_with_retries(contents, config)
         return _extract_gemini_response(response)
 
 

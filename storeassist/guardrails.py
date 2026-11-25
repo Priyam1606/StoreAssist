@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone, tzinfo
 from decimal import Decimal, InvalidOperation
 import re
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 _LINE_LIST_PREFIX_RE = re.compile(r"(?m)^\s*\d+[.)]\s+")
 _ISO_DATE_RE = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
+_ISO_TIMESTAMP_RE = re.compile(
+    r"\b\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})?\b"
+)
 _NUMBER_TOKEN_RE = re.compile(r"(?<![A-Za-z0-9])-?\d[\d,]*(?:\.\d+)?")
 
 _WRITE_VERB_RE = re.compile(
@@ -68,9 +73,47 @@ def _to_decimal(raw_token: str) -> Decimal | None:
     return parsed
 
 
+def _ist_timezone() -> tzinfo:
+    try:
+        return ZoneInfo("Asia/Kolkata")
+    except ZoneInfoNotFoundError:
+        return timezone(timedelta(hours=5, minutes=30))
+
+
 def _collect_iso_dates(text: str, dates: set[str]) -> None:
     for match in _ISO_DATE_RE.findall(text):
         dates.add(match)
+
+
+def _collect_timestamp_views(parsed_dt: datetime) -> list[datetime]:
+    if parsed_dt.tzinfo is None:
+        return [parsed_dt]
+    return [
+        parsed_dt,
+        parsed_dt.astimezone(timezone.utc),
+        parsed_dt.astimezone(_ist_timezone()),
+    ]
+
+
+def _collect_iso_timestamps(text: str, numbers: set[Decimal], dates: set[str]) -> None:
+    for raw_ts in _ISO_TIMESTAMP_RE.findall(text):
+        try:
+            parsed_dt = datetime.fromisoformat(raw_ts)
+        except ValueError:
+            continue
+        for view in _collect_timestamp_views(parsed_dt):
+            dates.add(view.date().isoformat())
+            hour_12 = view.hour % 12 or 12
+            for part in (
+                view.year,
+                view.month,
+                view.day,
+                view.hour,
+                hour_12,
+                view.minute,
+                view.second,
+            ):
+                numbers.add(Decimal(part))
 
 
 def _collect_numbers_from_text(text: str, target: set[Decimal]) -> None:
@@ -90,9 +133,11 @@ def _collect_from_value(value: Any, numbers: set[Decimal], dates: set[str]) -> N
         return
     if isinstance(value, str):
         _collect_iso_dates(value, dates)
+        _collect_iso_timestamps(value, numbers, dates)
         _collect_numbers_from_text(value, numbers)
         return
     if isinstance(value, list):
+        numbers.add(Decimal(len(value)))
         for item in value:
             _collect_from_value(item, numbers, dates)
         return
