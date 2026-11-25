@@ -1,0 +1,338 @@
+[
+  {
+    "id": "se_01",
+    "category": "simple_english",
+    "text": "What products are running low on stock?",
+    "expected_first_tool": "get_low_stock",
+    "expected_args": {},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "se_02",
+    "category": "simple_english",
+    "text": "Show today's sales summary.",
+    "expected_first_tool": "get_daily_sales",
+    "expected_args": {},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "se_03",
+    "category": "simple_english",
+    "text": "What is the price of Maggi?",
+    "expected_first_tool": "search_products",
+    "expected_args": {"query": "Maggi"},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "se_04",
+    "category": "simple_english",
+    "text": "What is the price of Nescafe?",
+    "expected_first_tool": "search_products",
+    "expected_args": {"query": "Nescafe"},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "se_05",
+    "category": "simple_english",
+    "text": "How much does Priya Nair owe me?",
+    "expected_first_tool": "search_customers",
+    "expected_args": {"query": "Priya Nair"},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "se_06",
+    "category": "simple_english",
+    "text": "What is Rajesh Gupta's balance?",
+    "expected_first_tool": "search_customers",
+    "expected_args": {"query": "Rajesh Gupta"},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "se_07",
+    "category": "simple_english",
+    "text": "Which items should I reorder?",
+    "expected_first_tool": "suggest_reorder",
+    "expected_args": {},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "se_08",
+    "category": "simple_english",
+    "text": "Find customer Manoj Singh.",
+    "expected_first_tool": "search_customers",
+    "expected_args": {"query": "Manoj Singh"},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "se_09",
+    "category": "simple_english",
+    "text": "Show all Tata products.",
+    "expected_first_tool": "search_products",
+    "expected_args": {"query": "Tata"},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "se_10",
+    "category": "simple_english",
+    "text": "What is the price of Harpic?",
+    "expected_first_tool": "search_products",
+    "expected_args": {"query": "Harpic"},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "hi_01",
+    "category": "hinglish",
+    "text": "Kaun sa maal kam hai dukaan mein?",
+    "expected_first_tool": "get_low_stock",
+    "expected_args": {},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "hi_02",
+    "category": "hinglish",
+    "text": "Aaj kitna maal bika?",
+    "expected_first_tool": "get_daily_sales",
+    "expected_args": {},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "hi_03",
+    "category": "hinglish",
+    "text": "Maggi kitne ka hai?",
+    "expected_first_tool": "search_products",
+    "expected_args": {"query": "Maggi"},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "hi_04",
+    "category": "hinglish",
+    "text": "Madhur chini ka daam kya hai?",
+    "expected_first_tool": "search_products",
+    "expected_args": {"query": "Madhur"},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "hi_05",
+    "category": "hinglish",
+    "text": "Ramesh Kumar ka udhaar kitna hai?",
+    "expected_first_tool": "search_customers",
+    "expected_args": {"query": "Ramesh Kumar"},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "hi_06",
+    "category": "hinglish",
+    "text": "Ananya Iyer pe kitna baaki hai?",
+    "expected_first_tool": "search_customers",
+    "expected_args": {"query": "Ananya Iyer"},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "hi_07",
+    "category": "hinglish",
+    "text": "Naya maal kya mangwana chahiye?",
+    "expected_first_tool": "suggest_reorder",
+    "expected_args": {},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "hi_08",
+    "category": "hinglish",
+    "text": "Red Label chai patti kitne ki hai?",
+    "expected_first_tool": "search_products",
+    "expected_args": {"query": "Red Label"},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "hi_09",
+    "category": "hinglish",
+    "text": "Parle-G kitne rupaye ka hai?",
+    "expected_first_tool": "search_products",
+    "expected_args": {"query": "Parle-G"},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "hi_10",
+    "category": "hinglish",
+    "text": "Sunita Sharma ka balance check karo.",
+    "expected_first_tool": "search_customers",
+    "expected_args": {"query": "Sunita Sharma"},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "am_01",
+    "category": "ambiguous",
+    "text": "How much does the customer starting with Ra owe me?",
+    "expected_first_tool": "search_customers",
+    "expected_args": {"query": "Ra"},
+    "expected_outcome": "clarification"
+  },
+  {
+    "id": "am_02",
+    "category": "ambiguous",
+    "text": "Check udhaar balance for the customer starting with An.",
+    "expected_first_tool": "search_customers",
+    "expected_args": {"query": "An"},
+    "expected_outcome": "clarification"
+  },
+  {
+    "id": "am_03",
+    "category": "ambiguous",
+    "text": "What is the price of Amul Butter?",
+    "expected_first_tool": "search_products",
+    "expected_args": {"query": "Amul Butter"},
+    "expected_outcome": "clarification"
+  },
+  {
+    "id": "am_04",
+    "category": "ambiguous",
+    "text": "How much Aashirvaad atta is left in stock?",
+    "expected_first_tool": "search_products",
+    "expected_args": {"query": "Aashirvaad"},
+    "expected_outcome": "clarification"
+  },
+  {
+    "id": "am_05",
+    "category": "ambiguous",
+    "text": "India Gate rice kitne ka hai?",
+    "expected_first_tool": "search_products",
+    "expected_args": {"query": "India Gate"},
+    "expected_outcome": "clarification"
+  },
+  {
+    "id": "am_06",
+    "category": "ambiguous",
+    "text": "What is the price of Vim?",
+    "expected_first_tool": "search_products",
+    "expected_args": {"query": "Vim"},
+    "expected_outcome": "clarification"
+  },
+  {
+    "id": "am_07",
+    "category": "ambiguous",
+    "text": "Haldiram bhujia ka rate kya hai?",
+    "expected_first_tool": "search_products",
+    "expected_args": {"query": "Haldiram"},
+    "expected_outcome": "clarification"
+  },
+  {
+    "id": "os_01",
+    "category": "out_of_scope",
+    "text": "What will the weather be tomorrow?",
+    "expected_first_tool": null,
+    "expected_args": {},
+    "expected_outcome": "refused"
+  },
+  {
+    "id": "os_02",
+    "category": "out_of_scope",
+    "text": "Delete the Maggi product from the store.",
+    "expected_first_tool": null,
+    "expected_args": {},
+    "expected_outcome": "refused"
+  },
+  {
+    "id": "os_03",
+    "category": "out_of_scope",
+    "text": "Change the price of Dettol soap to 50 rupees.",
+    "expected_first_tool": null,
+    "expected_args": {},
+    "expected_outcome": "refused"
+  },
+  {
+    "id": "os_04",
+    "category": "out_of_scope",
+    "text": "Record a cash sale of 2 Maggi packets.",
+    "expected_first_tool": null,
+    "expected_args": {},
+    "expected_outcome": "refused"
+  },
+  {
+    "id": "os_05",
+    "category": "out_of_scope",
+    "text": "Tell me a funny joke.",
+    "expected_first_tool": null,
+    "expected_args": {},
+    "expected_outcome": "refused"
+  },
+  {
+    "id": "os_06",
+    "category": "out_of_scope",
+    "text": "Add a new customer named Kabir Verma.",
+    "expected_first_tool": null,
+    "expected_args": {},
+    "expected_outcome": "refused"
+  },
+  {
+    "id": "os_07",
+    "category": "out_of_scope",
+    "text": "Who won the cricket match yesterday?",
+    "expected_first_tool": null,
+    "expected_args": {},
+    "expected_outcome": "refused"
+  },
+  {
+    "id": "os_08",
+    "category": "out_of_scope",
+    "text": "Update stock of Harpic to 20 units.",
+    "expected_first_tool": null,
+    "expected_args": {},
+    "expected_outcome": "refused"
+  },
+  {
+    "id": "ms_01",
+    "category": "multi_step",
+    "text": "How much stock of Maggi do we currently have?",
+    "expected_first_tool": "search_products",
+    "expected_args": {"query": "Maggi"},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "ms_02",
+    "category": "multi_step",
+    "text": "How many units of Dettol soap are left in stock?",
+    "expected_first_tool": "search_products",
+    "expected_args": {"query": "Dettol"},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "ms_03",
+    "category": "multi_step",
+    "text": "Check Priya Nair's recent credit ledger entries.",
+    "expected_first_tool": "search_customers",
+    "expected_args": {"query": "Priya Nair"},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "ms_04",
+    "category": "multi_step",
+    "text": "Show the sales made to Manoj Singh.",
+    "expected_first_tool": "search_customers",
+    "expected_args": {"query": "Manoj Singh"},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "ms_05",
+    "category": "multi_step",
+    "text": "Check Rajesh Gupta's credit balance and his recent ledger entries.",
+    "expected_first_tool": "search_customers",
+    "expected_args": {"query": "Rajesh Gupta"},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "ms_06",
+    "category": "multi_step",
+    "text": "What is the total suggested reorder quantity across all items needing reorder?",
+    "expected_first_tool": "suggest_reorder",
+    "expected_args": {},
+    "expected_outcome": "answered"
+  },
+  {
+    "id": "ms_07",
+    "category": "multi_step",
+    "text": "What is the total current stock across all low-stock items?",
+    "expected_first_tool": "get_low_stock",
+    "expected_args": {},
+    "expected_outcome": "answered"
+  }
+]
