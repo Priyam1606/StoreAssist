@@ -18,9 +18,12 @@ from storeassist.store_client import (
 
 
 def test_paise_to_rupees_guards_bool_and_none() -> None:
-    assert paise_to_rupees(12550) == 125.5
-    assert paise_to_rupees(0) == 0.0
-    assert paise_to_rupees(-500) == -5.0
+    assert paise_to_rupees(2800) == "28.00"
+    assert paise_to_rupees(2850) == "28.50"
+    assert paise_to_rupees(12550) == "125.50"
+    assert paise_to_rupees(0) == "0.00"
+    assert paise_to_rupees(-50) == "-0.50"
+    assert paise_to_rupees(-500) == "-5.00"
     assert paise_to_rupees(True) is None
     assert paise_to_rupees(False) is None
     assert paise_to_rupees(None) is None
@@ -45,15 +48,15 @@ def test_convert_paise_fields_recursive_with_bool_and_none() -> None:
     assert converted == {
         "id": 1,
         "total_sales_paise": 25075,
-        "total_sales_rupees": 250.75,
+        "total_sales_rupees": "250.75",
         "flag_paise": True,
         "missing_paise": None,
         "items": [
             {
                 "unit_price_paise": 1500,
-                "unit_price_rupees": 15.0,
+                "unit_price_rupees": "15.00",
                 "line_total_paise": 3000,
-                "line_total_rupees": 30.0,
+                "line_total_rupees": "30.00",
             },
             {"unit_price_paise": False, "line_total_paise": None},
         ],
@@ -114,11 +117,11 @@ def test_store_client_lazy_login_and_get_daily_summary() -> None:
     assert result == {
         "date": "2026-11-25",
         "total_sales_paise": 50000,
-        "total_sales_rupees": 500.0,
+        "total_sales_rupees": "500.00",
         "net_sales_paise": 47500,
-        "net_sales_rupees": 475.0,
+        "net_sales_rupees": "475.00",
         "gross_profit_paise": 15500,
-        "gross_profit_rupees": 155.0,
+        "gross_profit_rupees": "155.00",
         "sales_count": 5,
     }
     assert recorded == [

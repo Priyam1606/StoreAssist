@@ -27,9 +27,11 @@ class StoreAPIError(StoreClientError):
         self.status_code = status_code
 
 
-def paise_to_rupees(value: Any) -> float | None:
+def paise_to_rupees(value: Any) -> str | None:
     if isinstance(value, int) and not isinstance(value, bool):
-        return round(value / 100, 2)
+        sign = "-" if value < 0 else ""
+        rupees, paise = divmod(abs(value), 100)
+        return f"{sign}{rupees}.{paise:02d}"
     return None
 
 

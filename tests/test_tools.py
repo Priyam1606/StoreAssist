@@ -114,19 +114,19 @@ def test_tools_call_exact_endpoints_and_params() -> None:
         daily_res = tools["get_daily_sales"].execute({"date": "2026-11-25"})
         reorder_res = tools["suggest_reorder"].execute({})
 
-    assert products_res["items"][0]["price_rupees"] == 28.0
+    assert products_res["items"][0]["price_rupees"] == "28.00"
     assert low_res["returned_count"] == 1
     assert stock_res == {"product_id": 5, "name": "Tata Salt", "current_stock": 2, "reorder_level": 10}
-    assert customers_res["items"][0]["credit_limit_rupees"] == 5000.0
-    assert balance_res == {"customer_id": 9, "balance_paise": 125000, "balance_rupees": 1250.0}
-    assert ledger_res["items"][0]["amount_rupees"] == 1250.0
-    assert sales_res["items"][0]["total_rupees"] == 56.0
+    assert customers_res["items"][0]["credit_limit_rupees"] == "5000.00"
+    assert balance_res == {"customer_id": 9, "balance_paise": 125000, "balance_rupees": "1250.00"}
+    assert ledger_res["items"][0]["amount_rupees"] == "1250.00"
+    assert sales_res["items"][0]["total_rupees"] == "56.00"
     assert daily_res == {
         "date": "2026-11-25",
         "total_sales_paise": 90000,
-        "total_sales_rupees": 900.0,
+        "total_sales_rupees": "900.00",
     }
-    assert reorder_res["items"][0]["unit_cost_rupees"] == 20.0
+    assert reorder_res["items"][0]["unit_cost_rupees"] == "20.00"
 
     assert ("GET", "/customers/9/ledger", {"limit": "20"}) in recorded
     assert ("GET", "/sales", {"date": "2026-11-25", "customer_id": "9"}) in recorded

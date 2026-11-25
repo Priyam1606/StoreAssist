@@ -18,6 +18,7 @@ class LLMError(Exception):
 class ToolCall:
     name: str
     arguments: dict[str, Any]
+    thought_signature: bytes | None = None
 
 
 @dataclass(frozen=True)
@@ -78,9 +79,12 @@ def _to_gemini_content(message: Message) -> types.Content:
             return types.Content(
                 role="model",
                 parts=[
-                    types.Part.from_function_call(
-                        name=message.tool_call.name,
-                        args=message.tool_call.arguments,
+                    types.Part(
+                        function_call=types.FunctionCall(
+                            name=message.tool_call.name,
+                            args=message.tool_call.arguments,
+                        ),
+                        thought_signature=message.tool_call.thought_signature,
                     )
                 ],
             )
@@ -99,16 +103,36 @@ def _to_gemini_content(message: Message) -> types.Content:
     )
 
 
+def _build_tool_call(call: Any, thought_signature: Any) -> ToolCall:
+    call_name = getattr(call, "name", None)
+    if not isinstance(call_name, str) or not call_name:
+        raise LLMError("Gemini returned a tool call without a function name.")
+    raw_args = getattr(call, "args", None)
+    arguments = dict(raw_args) if isinstance(raw_args, dict) else {}
+    sig = thought_signature if isinstance(thought_signature, bytes) else None
+    return ToolCall(name=call_name, arguments=arguments, thought_signature=sig)
+
+
+def _extract_candidate_parts(response: Any) -> list[Any]:
+    candidates = getattr(response, "candidates", None)
+    if not candidates:
+        return []
+    content = getattr(candidates[0], "content", None)
+    parts = getattr(content, "parts", None)
+    return list(parts) if parts else []
+
+
 def _extract_gemini_response(response: Any) -> LLMResponse:
+    for part in _extract_candidate_parts(response):
+        call = getattr(part, "function_call", None)
+        if call is not None:
+            thought_signature = getattr(part, "thought_signature", None)
+            return LLMResponse(tool_call=_build_tool_call(call, thought_signature))
+
     function_calls = getattr(response, "function_calls", None)
     if function_calls:
         first_call = function_calls[0]
-        call_name = getattr(first_call, "name", None)
-        if not isinstance(call_name, str) or not call_name:
-            raise LLMError("Gemini returned a tool call without a function name.")
-        raw_args = getattr(first_call, "args", None)
-        arguments = dict(raw_args) if isinstance(raw_args, dict) else {}
-        return LLMResponse(tool_call=ToolCall(name=call_name, arguments=arguments))
+        return LLMResponse(tool_call=_build_tool_call(first_call, None))
 
     text = getattr(response, "text", None)
     if isinstance(text, str) and text.strip():

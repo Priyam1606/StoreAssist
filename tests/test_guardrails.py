@@ -33,13 +33,13 @@ def test_grounding_allows_rupees_commas_decimals_question_dates_and_list_numbers
         TraceRecord(
             tool_name="get_daily_sales",
             args={"date": "2026-11-25"},
-            result={"date": "2026-11-25", "total_sales_paise": 125050, "total_sales_rupees": 1250.5},
+            result={"date": "2026-11-25", "total_sales_paise": 125050, "total_sales_rupees": "1250.50"},
         ),
         TraceRecord(
             tool_name="search_products",
             args={"query": "Salt"},
             result={
-                "items": [{"id": 3, "name": "Tata Salt", "price_paise": 2800, "price_rupees": 28.0}],
+                "items": [{"id": 3, "name": "Tata Salt", "price_paise": 2800, "price_rupees": "28.00"}],
                 "truncated": False,
                 "total_count": 1,
                 "returned_count": 1,
@@ -63,7 +63,7 @@ def test_grounding_blocks_ungrounded_numbers_and_bool_zero_one() -> None:
             tool_name="search_products",
             args={"query": "Salt"},
             result={
-                "items": [{"id": 3, "name": "Tata Salt", "price_paise": 2800, "price_rupees": 28.0}],
+                "items": [{"id": 3, "name": "Tata Salt", "price_paise": 2800, "price_rupees": "28.00"}],
                 "truncated": False,
                 "total_count": 1,
                 "returned_count": 1,

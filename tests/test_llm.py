@@ -43,8 +43,26 @@ class _StubFunctionCall:
 
 
 @dataclass
+class _StubPart:
+    function_call: _StubFunctionCall | None = None
+    thought_signature: bytes | None = None
+    text: str | None = None
+
+
+@dataclass
+class _StubContent:
+    parts: list[_StubPart]
+
+
+@dataclass
+class _StubCandidate:
+    content: _StubContent
+
+
+@dataclass
 class _StubResponse:
     function_calls: list[_StubFunctionCall] | None = None
+    candidates: list[_StubCandidate] | None = None
     text: str | None = None
 
 
@@ -158,3 +176,46 @@ def test_gemini_client_wraps_sdk_and_empty_response_errors_in_llm_error() -> Non
 
     with pytest.raises(LLMError, match="empty response"):
         gemini.generate([Message(role="user", content="Hi")], "", tools)
+
+
+def test_gemini_client_preserves_thought_signature_across_turns() -> None:
+    tools = _sample_tools()
+    signature = b"opaque-thought-sig-v1"
+    turn1_response = _StubResponse(
+        candidates=[
+            _StubCandidate(
+                content=_StubContent(
+                    parts=[
+                        _StubPart(text="thinking...", thought_signature=None),
+                        _StubPart(
+                            function_call=_StubFunctionCall(name="get_low_stock", args={}),
+                            thought_signature=signature,
+                        ),
+                    ]
+                )
+            )
+        ]
+    )
+    turn2_response = _StubResponse(text="Sugar 1kg is running low.")
+    sdk_client = _StubSDKClient([turn1_response, turn2_response])
+    gemini = GeminiClient(api_key="dummy-key", model="gemini-3.5-flash-lite", sdk_client=sdk_client)
+
+    first = gemini.generate([Message(role="user", content="What is low?")], "System", tools)
+    assert first.tool_call == ToolCall(
+        name="get_low_stock",
+        arguments={},
+        thought_signature=signature,
+    )
+
+    messages = [
+        Message(role="user", content="What is low?"),
+        Message(role="model", tool_call=first.tool_call),
+        Message(role="tool", tool_name="get_low_stock", tool_result={"items": []}),
+    ]
+    second = gemini.generate(messages, "System", tools)
+
+    assert second == LLMResponse(text="Sugar 1kg is running low.")
+    model_content = sdk_client.models.calls[1]["contents"][1]
+    assert model_content.role == "model"
+    assert model_content.parts[0].function_call.name == "get_low_stock"
+    assert model_content.parts[0].thought_signature == signature

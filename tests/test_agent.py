@@ -68,7 +68,7 @@ def test_agent_uses_default_system_prompt_and_multi_step_rupees_quote() -> None:
     assert result.outcome == "answered"
     assert result.steps == 2
     assert result.answer == "Sharma Ji owes Rs 1,450.00."
-    assert result.trace[1].result["balance_rupees"] == 1450.0
+    assert result.trace[1].result["balance_rupees"] == "1450.00"
     assert fake_llm.calls[0].system_prompt == SYSTEM_PROMPT
     assert f"Asia/Kolkata): {today_ist_iso()}" in fake_llm.calls[0].system_prompt
 
